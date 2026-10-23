@@ -51,6 +51,21 @@ def make_link(target: Tuple[int, int, int], emoji: str,
         return f'<a href="{get_state_filename(*target)}">{emoji}</a>'
     return f'<span style="opacity:0.3">{emoji}</span>'
 
+def get_sector_name(x: int, y: int) -> str:
+    """Classifies E1M1 coordinates into recognizable Doom level zones."""
+    if x >= 2880 and y <= -4200:
+        return "Exit Chamber"
+    elif x < 700:
+        return "Toxic Courtyard"
+    elif y > -2800:
+        return "Computer Station"
+    elif x >= 2200:
+        return "Zig-Zag Walkway"
+    elif x >= 1400:
+        return "Central Junction"
+    else:
+        return "Entry Hangar"
+
 def generate_navigation_markdown(x: int, y: int, angle: int,
                                   positions: Set[Tuple[int, int, int]],
                                   step_size: int) -> str:
@@ -98,34 +113,33 @@ def generate_navigation_markdown(x: int, y: int, angle: int,
     sw_pos = (*add_pt(add_pt(curr_pos, back), left), angle)  # Back-Left
     se_pos = (*add_pt(add_pt(curr_pos, back), right), angle) # Back-Right
 
-    # shoot (reload) - stay put
-    # PROXIMITY END GAME TRIGGER
+    # Interactive Center Action: Exit Trigger or Hold Position
     # Final room approx: x[2944, 3072], y[-4864, -4608]
     if x >= 2944 and y <= -4608:
-        shoot_link = f'<a href="end_game.md">💥</a>'
+        shoot_link = '<a href="end_game.md" title="Flip Exit Switch"><kbd>&nbsp;🏁 EXIT&nbsp;</kbd></a>'
     else:
-        shoot_link = f'<a href="{get_state_filename(x, y, angle)}">💥</a>'
+        shoot_link = f'<a href="{get_state_filename(x, y, angle)}" title="Hold Position"><kbd>&nbsp;💥&nbsp;</kbd></a>'
 
-    # Link Helper
-    def get_link(target, label):
+    # Tactile Button Link Helper
+    def get_btn(target, label):
         if target in positions:
-            return f'<a href="{get_state_filename(*target)}">{label}</a>'
-        return f'<span style="opacity:0.3">{label}</span>'
+            return f'<a href="{get_state_filename(*target)}"><kbd>&nbsp;{label}&nbsp;</kbd></a>'
+        return f'<span style="opacity:0.25"><kbd>&nbsp;{label}&nbsp;</kbd></span>'
 
-    # Generate Grid Links
-    # W/E are now ROTATION (in place), not strafe+turn
+    # Generate Grid Links with arcade tactile buttons
     links = {
-        "nw": get_link(nw_pos, "↖️"),
-        "n":  get_link(n_pos, "⬆️"),
-        "ne": get_link(ne_pos, "↗️"),
-        "w":  get_link(turn_left_pos, "⬅️"),   # Just rotate left
-        "e":  get_link(turn_right_pos, "➡️"),  # Just rotate right
-        "sw": get_link(sw_pos, "↙️"),
-        "s":  get_link(s_pos, "⬇️"),
-        "se": get_link(se_pos, "↘️"),
+        "nw": get_btn(nw_pos, "↖️"),
+        "n":  get_btn(n_pos, "⬆️"),
+        "ne": get_btn(ne_pos, "↗️"),
+        "w":  get_btn(turn_left_pos, "⬅️"),   # Rotate left
+        "e":  get_btn(turn_right_pos, "➡️"),  # Rotate right
+        "sw": get_btn(sw_pos, "↙️"),
+        "s":  get_btn(s_pos, "⬇️"),
+        "se": get_btn(se_pos, "↘️"),
     }
     
     direction = DIRECTION_NAMES.get(angle, f"{angle}°")
+    sector = get_sector_name(x, y)
     img_path = f"../assets/doom_{x}_{y}_{angle}.webp"
     
     markdown = f"""<p align="center">
@@ -151,7 +165,7 @@ def generate_navigation_markdown(x: int, y: int, angle: int,
 </table>
 
 <p align="center">
-<sub>🧭 {direction} | <a href="../README.md">🏠 Menu</a></sub>
+<sub>🧭 <b>Facing</b>: {direction} &nbsp;|&nbsp; 📍 <b>Area</b>: {sector} &nbsp;|&nbsp; <a href="../README.md">🏠 Main Menu</a></sub>
 </p>
 """
     return markdown
@@ -255,7 +269,9 @@ def generate_end_screen():
 <h2 align="center">YOU SURVIVED E1M1</h2>
 
 <p align="center">
-<a href="../menu/episode_1.md"><strong>🔄 RESTART MISSION</strong></a>
+<a href="../menu/episode_1.md"><kbd>&nbsp;🔄 RESTART MISSION&nbsp;</kbd></a>
+&nbsp;&nbsp;&nbsp;
+<a href="../README.md"><kbd>&nbsp;🏠 MAIN MENU&nbsp;</kbd></a>
 </p>
 """
     with open(GAME_DIR / "end_game.md", "w", encoding="utf-8") as f:

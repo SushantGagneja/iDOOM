@@ -58,6 +58,5 @@ iDOOM/
 
 ## License
 
-MIT - feel free to tweak around and play with the code
+[MIT](LICENSE) - feel free to tweak around and play with the code
 Feel free to raise issues and PRs too
-
